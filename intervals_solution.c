@@ -431,12 +431,12 @@ interval_set_remove( interval_set_t* is,
 
         while ( p )
         {
-                if ( p->left <= newLeft && newLeft < p->right )
+                if ( p->left <= newLeft && newLeft <= p->right )
                 {
                         lNode = p;
                 }
 
-                if ( p->left <= newRight && newRight < p->right )
+                if ( p->left <= newRight && newRight <= p->right )
                 {
                         rNode = p;
                 }
@@ -486,50 +486,74 @@ interval_set_remove( interval_set_t* is,
         else if ( !lNode && rNode )
         {
                 /*
-                        When lNode is not defined and rNode is, this means
-                        that 'newLeft' exists below all the intervals in the set
-                        and 'newRight' exists WITHIN an inteval in the set.
+                        When lNode is not defined and rNode is, this means there
+                        are 2 possible cases:
 
-                        We can update the node 'newRight' exists in accordingly and
-                        remove all nodes before it.
+                        - Either 'newLeft' exists below all the intervals in the 
+                        set and 'newRight' exists WITHIN an interval in the set.
+
+                        - Or 'newleft' exists in between some intervals in the
+                        set and 'newRight' exists WITHIN an interval in the set.
+
+                        For the first case, we can update the node 'newRight' 
+                        exists in accordingly and remove all nodes before it.
+
+                        For the second case, this is an invalid operation, since
+                        we can't be certain would the new left value for any
+                        interval would be. We can do nothing and exit gracefully 
+                        in this case.
                  */
 
-                interval_t*     temp = is->head;
-
-                rNode->left = newRight;
-
-                while ( temp != rNode )
+                if ( newLeft < is->head->left )
                 {
-                        temp = temp->next;
-                        free( temp->prev );
+                        interval_t*     temp = is->head;
+
+                        rNode->left = newRight;
+
+                        while ( temp != rNode )
+                        {
+                                temp = temp->next;
+                                free( temp->prev );
+                        }
+                        
+                        is->head = rNode;
                 }
-                
-                is->head = rNode;
         }
         else if ( lNode && !rNode )
         {
                 /*
                         This is the same as the previous else-if case except
-                        reversed. When lNode IS defined and rNode IS NOT,
-                        then 'newLeft' exists within an interval in the set and
-                        'newRight' exists above the entire interval set.
+                        reversed. There are still 2 cases:
 
-                        Therefore, we can update the node 'newLeft' exists in 
-                        accordingly and remove all nodes following it.
+                        - Either 'newLeft' exists below all the intervals in the 
+                        set and 'newRight' exists WITHIN an interval in the set.
+
+                        - Or 'newleft' exists in between some intervals in the
+                        set and 'newRight' exists WITHIN an interval in the set.
+
+                        Again for the first case, we can update the node 
+                        'newLeft' exists in accordingly and remove all nodes 
+                        following it.
+
+                        For the second case, this would also be a no-op and can
+                        exit gracefully.
                  */
 
-                interval_t*     temp = lNode->next;
-
-                lNode->right = newLeft;
-                is->tail = lNode;
-                
-                while ( temp )
+                if ( newRight > is->tail->right )
                 {
-                        temp = temp->next;
-                        free( temp->prev );
-                }
+                        interval_t*     temp = lNode->next;
 
-                lNode->next = NULL;
+                        lNode->right = newLeft;
+                        is->tail = lNode;
+                        
+                        while ( temp )
+                        {
+                                temp = temp->next;
+                                free( temp->prev );
+                        }
+
+                        lNode->next = NULL;
+                }
         }
         else if ( !lNode && !rNode )
         {
@@ -597,23 +621,23 @@ interval_set_remove( interval_set_t* is,
 
                         free(lNode);
                 }
-                else if ( lNode->left == newLeft && newRight < lNode->right )
+                else if ( lNode->left == newLeft && newRight <= lNode->right )
                 {
                         /*
                                 Case 2: [newLeft, newRight) starts at the node's left 
                                 value and ends somewhere inside the interval range.
                          */
 
-                        lNode->right = newRight;
+                        lNode->left = newRight;
                 }
-                else if ( lNode->left < newLeft && newRight == lNode->right )
+                else if ( lNode->left <= newLeft && newRight == lNode->right )
                 {
                         /*
                                 Case 3: [newLeft, newRight) starts somwhere inside the 
                                 interval range and ends at the node's right value.
                          */
 
-                        lNode->left = newLeft;
+                        lNode->right = newLeft;
                 }
                 else if ( lNode->left < newLeft && newRight < lNode->right )
                 {
