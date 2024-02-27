@@ -660,15 +660,13 @@ main( int argc, char** argv )
         
         while (1)
         {
-                printf( "Enter an operation: " );
-                if ( fgets( buf, bufSize, stdin ) == NULL )
+                printf( "Enter an operation ('Q' to quit): " );
+                if ( fgets( buf, bufSize, stdin ) == NULL || strcmp( strtok( buf, "\n" ), "Q" ) == 0 )
                 {
                         break;
                 }
 
-                char*                   tok = strtok( buf, " " );
-
-                char*                   operationArg = tok;
+                char*                   operationArg = strtok( buf, " " );
                 int                     leftArg = atoi( strtok( NULL, " " ) );
                 int                     rightArg = atoi( strtok( NULL, " " ) );
 
