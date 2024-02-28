@@ -1,6 +1,6 @@
 # AddRemoveIntervalsProblem
 
-This repo houses my solution in C to the following problem, based on mainting a valid set of disjoint integer intervals.
+This repo houses my solution in C to the following problem, based on maintaining a valid set of disjoint integer intervals.
 
 - [Problem Statement](#problem-statement)
 - [Solution](#solution)
